@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2022.1.2),
-    on Mon Apr 25 00:05:44 2022
+    on Fri Apr 29 14:23:31 2022
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -28,22 +28,65 @@ import psychopy.iohub as io
 from psychopy.hardware import keyboard
 
 import os
+import numpy as np
+import random
+import glob
 import random
 
+def read_files(master_path):
+    wav_files = glob.glob(master_path + '*.wav')
+    files = []
+    for file in wav_files:
+        file = file.split('/')[-1]
+        files.append(file)
+    return files
+
 def gen_seq(files, master_path, shifted_path):
-    paths = list('N')
+    paths = np.array([])
     for fp in files:
         master = master_path + fp
-        paths.append(master)
+        paths = np.append(paths, master)
         shifted = shifted_path + fp.split('.')[0] + '_shifted.wav'
-        paths.append(shifted)
-    # Randomize the array
-    random.shuffle(paths)
+        paths = np.append(paths, shifted)
+    # Randomize the sequence
+    print (paths)
+    paths = seq_randomizer(paths)
+    print (paths)
+    # Add 'N' randomly
+    paths = list(paths)
+    paths.insert(random.randint(0,3), 'N')
+    print (paths)
+    return paths
+
+def seq_randomizer(paths):
+    # First arrange in abab
+    paths[[1, 2]] = paths[[2, 1]]
+    paths = distribute_within(paths)
+    return paths
+
+def distribute_within(paths):
+    """
+    Cases:
+    1. i == 0: ABAbBb
+    2. i == 1: AbBABb
+    3. i == 2: ABbAbB
+    4. i == 3: AbBbAB
+    """
+    i = random.randint(0, 3)
+    if i == 0:
+        paths = paths
+    elif i == 1:
+        paths[[0, 2]] = paths[[2, 0]]
+    elif i == 2:
+        paths[[1, 3]] = paths[[3, 1]]
+    else:
+        paths[[0, 2]] = paths[[2, 0]]
+        paths[[1, 3]] = paths[[3, 1]]
     return paths
     
 master_path = 'audio/master/'
 shifted_path = 'audio/shifted/'
-all_files = os.listdir(master_path)
+all_files = read_files(master_path)
 
 # File index for tracking condition
 index = 0
@@ -53,6 +96,7 @@ files = random.sample(all_files, 2)
 
 # Generate random sequence and relative path array
 sequence = gen_seq(files, master_path, shifted_path)
+np.savetxt('sequence.txt', np.array(sequence), fmt='%s')
 
 
 # Ensure that relative paths start from the same directory as this script
@@ -75,7 +119,7 @@ filename = _thisDir + os.sep + u'data/%s_%s_%s' % (expInfo['participant'], expNa
 # An ExperimentHandler isn't essential but helps with data saving
 thisExp = data.ExperimentHandler(name=expName, version='',
     extraInfo=expInfo, runtimeInfo=None,
-    originPath='/Users/saksham/Desktop/Music Tech/Gatech/Sem 2/MPC/Project/Stroop/Stroop_lastrun.py',
+    originPath='/Users/saksham/Desktop/Music Tech/Gatech/Sem 2/MPC/Project/binaural_beats/Stroop_lastrun.py',
     savePickle=True, saveWideText=True,
     dataFileName=filename)
 # save a log file for detail verbose info
